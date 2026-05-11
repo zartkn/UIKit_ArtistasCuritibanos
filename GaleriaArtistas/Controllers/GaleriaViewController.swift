@@ -15,6 +15,10 @@ final class GaleriaViewController: UIViewController {
     /// Subconjunto exibido na grade; pode ser filtrado pela busca.
     private var exibicaoAtual: [ObraDeArte] = []
 
+    /// Inibe a animação de entrada das células durante atualizações da busca,
+    /// evitando flicker a cada keystroke do usuário.
+    private var suprimirAnimacaoEntrada = false
+
     // MARK: - Elementos de UI
 
     /// Grade principal que exibe as obras em layout de células.
@@ -162,7 +166,12 @@ final class GaleriaViewController: UIViewController {
         }
 
         avisoVazio.isHidden = !exibicaoAtual.isEmpty
+
+        // Suprime a animação de entrada durante atualizações da busca para evitar
+        // flicker a cada caractere digitado — reativa logo após o reloadData.
+        suprimirAnimacaoEntrada = true
         galeriaView.reloadData()
+        suprimirAnimacaoEntrada = false
     }
 }
 
@@ -206,11 +215,14 @@ extension GaleriaViewController: UICollectionViewDelegate {
     }
 
     /// Anima o aparecimento das células conforme o scroll (fade + translação vertical).
+    /// A animação é inibida durante atualizações da busca para evitar flicker constante.
     func collectionView(
         _ collectionView: UICollectionView,
         willDisplay cell: UICollectionViewCell,
         forItemAt indexPath: IndexPath
     ) {
+        guard !suprimirAnimacaoEntrada else { return }
+
         cell.alpha = 0
         cell.transform = CGAffineTransform(translationX: 0, y: 18)
         UIView.animate(
