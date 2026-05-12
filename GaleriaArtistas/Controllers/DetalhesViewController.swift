@@ -56,6 +56,7 @@ final class DetalhesViewController: UIViewController {
         let lb = UILabel()
         lb.font = .systemFont(ofSize: 17, weight: .semibold)
         lb.textColor = .systemIndigo
+        lb.numberOfLines = 0   // suporta nomes longos sem truncar
         lb.translatesAutoresizingMaskIntoConstraints = false
         return lb
     }()
@@ -127,8 +128,37 @@ final class DetalhesViewController: UIViewController {
         preencherConteudo()
     }
 
-    /// Garante que a status bar fique clara (legível sobre o fundo escuro da imagem).
-    override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // Tint branco enquanto esta tela está visível (fundo escuro da imagem).
+        navigationController?.navigationBar.tintColor = .white
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        // Restaura o tint padrão ao sair, evitando que o botão de voltar
+        // fique branco/invisível na tela da galeria após a navegação de volta.
+        navigationController?.navigationBar.tintColor = .systemIndigo
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        // Ajusta o inset inferior do scroll para que o botão de compartilhamento
+        // fique sempre visível acima do home indicator.
+        //
+        // Por que aqui e não em viewDidLoad:
+        //   view.safeAreaInsets ainda é zero durante viewDidLoad (view fora da janela).
+        //   viewDidLayoutSubviews é chamado após a view entrar na janela, com insets reais.
+        //
+        // Por que contentInset e não uma constraint greaterThanOrEqual:
+        //   painelInfo.bottom == rolagem.bottom == view.bottom (igualdade).
+        //   A desigualdade nunca vence a igualdade que já a satisfaz — a única forma
+        //   de empurrar o conteúdo acima do home indicator é via contentInset.bottom,
+        //   que aumenta o espaço rolável sem deslocar nenhuma view.
+        let insetNecessario = view.safeAreaInsets.bottom + 16
+        guard rolagem.contentInset.bottom != insetNecessario else { return }
+        rolagem.contentInset.bottom = insetNecessario
+    }
 
     // MARK: - Configuração
 
@@ -136,12 +166,18 @@ final class DetalhesViewController: UIViewController {
         navigationItem.largeTitleDisplayMode = .never
         view.backgroundColor = UIColor(white: 0.07, alpha: 1)
 
-        // Botão de voltar com cor clara para contrastar com o fundo escuro
-        navigationController?.navigationBar.tintColor = .white
-
-        // Barra de navegação transparente nesta tela
+        // Barra de navegação transparente escopada a esta tela via navigationItem.
+        // Usar navigationItem (não navigationController) garante que a aparência
+        // só se aplique aqui e não vaze para outras telas da pilha.
         let aparenciaTransp = UINavigationBarAppearance()
         aparenciaTransp.configureWithTransparentBackground()
+
+        // Configura a cor do botão de voltar dentro desta aparência local
+        let aparenciaBotao = UIBarButtonItemAppearance()
+        aparenciaBotao.normal.titleTextAttributes = [.foregroundColor: UIColor.white]
+        aparenciaTransp.buttonAppearance = aparenciaBotao
+        aparenciaTransp.backButtonAppearance = aparenciaBotao
+
         navigationItem.standardAppearance = aparenciaTransp
         navigationItem.scrollEdgeAppearance = aparenciaTransp
     }
@@ -159,7 +195,7 @@ final class DetalhesViewController: UIViewController {
         painelInfo.addSubview(botaoCompartilhar)
 
         // Montagem das fichas de metadados
-        let fichaAno   = montarFicha(icone: "calendar",   titulo: "Ano",   valor: "\(registro.ano)")
+        let fichaAno    = montarFicha(icone: "calendar",   titulo: "Ano",   valor: "\(registro.ano)")
         let fichaEstilo = montarFicha(icone: "paintbrush", titulo: "Estilo", valor: registro.estilo)
         pilhaMeta.addArrangedSubview(fichaAno)
         pilhaMeta.addArrangedSubview(fichaEstilo)
@@ -211,14 +247,13 @@ final class DetalhesViewController: UIViewController {
             rotuloDescricao.leadingAnchor.constraint(equalTo: painelInfo.leadingAnchor, constant: 22),
             rotuloDescricao.trailingAnchor.constraint(equalTo: painelInfo.trailingAnchor, constant: -22),
 
-            // Botão de compartilhamento
+            // Botão de compartilhamento.
+            // A margem inferior real (acima do home indicator) é garantida pelo
+            // contentInset.bottom definido em viewDidLayoutSubviews.
             botaoCompartilhar.topAnchor.constraint(equalTo: rotuloDescricao.bottomAnchor, constant: 30),
             botaoCompartilhar.leadingAnchor.constraint(equalTo: painelInfo.leadingAnchor, constant: 22),
             botaoCompartilhar.trailingAnchor.constraint(equalTo: painelInfo.trailingAnchor, constant: -22),
-            botaoCompartilhar.bottomAnchor.constraint(
-                equalTo: painelInfo.bottomAnchor,
-                constant: -max(34, view.safeAreaInsets.bottom + 16)
-            ),
+            botaoCompartilhar.bottomAnchor.constraint(equalTo: painelInfo.bottomAnchor, constant: -16),
         ])
     }
 
@@ -244,7 +279,7 @@ final class DetalhesViewController: UIViewController {
      - Parameters:
        - icone: Nome do SF Symbol a usar.
        - titulo: Rótulo da ficha (ex.: "Ano").
-       - valor: Valor da ficha (ex.: "1962").
+       - valor: Valor da ficha (ex.: "2017").
      - Returns: `UIView` configurada e pronta para uso.
      */
     private func montarFicha(icone: String, titulo: String, valor: String) -> UIView {
