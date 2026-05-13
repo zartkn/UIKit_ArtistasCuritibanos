@@ -11,64 +11,68 @@ Projeto desenvolvido para a disciplina de **Mobile Development: iOS**, com o obj
 - Lucas Azzolin Haubmann
 - Vinicius Lima Teider
 
+---
 
 ## Como abrir no Xcode
 
-1. Abra o **Xcode** .
+1. Abra o **Xcode**.
 2. Escolha **File › New › Project…**
 3. Selecione **App** (iOS) e configure:
    - **Product Name:** `GaleriaArtistas`
-   - **Interface:** `Storyboard` *(o storyboard será removido em seguida)*
+   - **Interface:** `Storyboard`
    - **Language:** `Swift`
-4. Após criar o projeto, **exclua** os arquivos gerados automaticamente:
+4. Após criar o projeto, **exclua** o arquivo gerado automaticamente:
    - `Main.storyboard`
-   - `ViewController.swift`
-5. **Copie** os arquivos Swift desta pasta para dentro do projeto, mantendo a estrutura de grupos:
+   - > `ViewController.swift` pode ser mantido — ele está presente no projeto mas não é utilizado, pois o `SceneDelegate` define a raiz da navegação.
+5. **Copie** os arquivos Swift desta pasta para dentro do projeto:
    - `Models/ObraDeArte.swift`
    - `Controllers/GaleriaViewController.swift`
    - `Controllers/DetalhesViewController.swift`
    - `Views/ObraCelula.swift`
    - `AppDelegate.swift` *(substitui o gerado)*
    - `SceneDelegate.swift` *(substitui o gerado)*
-6. Em **Info.plist**, remova a chave `UIMainStoryboardFile`.
+6. Em **Info.plist**, remova (ou deixe vazia) a chave `UIMainStoryboardFile`.
 7. Em **Build Settings**, confirme que `SWIFT_VERSION = 5.9` ou superior.
 
 ---
 
-## Imagens do Projeto - Adicionando as imagens ao Assets.xcassets
+## Imagens do Projeto — Assets.xcassets
 
-As imagens utilizadas no aplicativo estão disponíveis na pasta `Imagens`, já organizadas e prontas para utilização no projeto. Para que o aplicativo funcione corretamente, basta copiar os arquivos da pasta para o catálogo de assets (`Assets.xcassets`) no Xcode (o app referencia as seguintes imagens no catálogo de assets).
-O conjunto de imagens foi pensado para representar diferentes formas de expressão artística presentes em Curitiba, com foco em artes urbanas, grafites e manifestações culturais de rua. Além de enriquecer visualmente o aplicativo, as obras ajudam a destacar a importância da arte urbana como forma de identidade cultural, comunicação social e valorização dos espaços públicos da cidade. 
+As imagens utilizadas estão disponíveis na pasta `Imagens`, prontas para uso. Para que o aplicativo carregue as imagens corretamente, copie os arquivos para o catálogo de assets (`Assets.xcassets`) no Xcode, usando exatamente os nomes listados abaixo.
 
-| Nome no catálogo       | Artista              | Obra                              |
-|------------------------|----------------------|-----------------------------------|
-| `povo_livre`           | Michel Devis         | Marechal Floriano                 |
-| `mafiosos`             | Gardpam              | Hospital Hélio Anjos Ortiz        |
-| `cwbsiria`             | Cosmic Boys          | Damasco na Siria                  |
-| `paulo_leminski`       | João Marcos          | Galeria Julio Moreira             |
-| `tec_puc`              | Neto Vetorello       | O mito da vida TECPUC             |
-| `cataratas`            | Lycio Esmanhoto      | Praça Rio Iguaçu                  |
-| `casa_hoffman`         | Rimon Guimarães      | Fundação Cultural de Curitiba     |
-| `indios`               | Wes Gama             | O povo brasileiro - Tingui        |
+O conjunto de imagens representa diferentes formas de expressão artística presentes em Curitiba, com foco em arte urbana, grafites e murais. As obras destacam a importância da arte de rua como forma de identidade cultural e valorização dos espaços públicos da cidade.
 
-As imagens disponibilizadas estão em formato `.jpg`, porém o aplicativo também oferece suporte para arquivos `.png`, caso seja desejado utilizar outras obras futuramente.
-> **Sem imagens:** o app funciona normalmente com o ícone SF Symbol `photo.artframe` como placeholder.
+| Nome no catálogo  | Artista           | Obra                               |
+|-------------------|-------------------|------------------------------------|
+| `povo_livre`      | Michel Devis      | Marechal Floriano                  |
+| `mafiosos`        | Gardpam           | Hospital Hélio Anjos Ortiz         |
+| `cwbsiria`        | Cosmic Boys       | Damasco na Síria                   |
+| `paulo_leminski`  | João Marcos       | Homenagem a Paulo Leminski         |
+| `tec_puc`         | Neto Vetorello    | O mito da vida TECPUC              |
+| `cataratas`       | Lycio Esmanhoto   | Praça Rio Iguaçu                   |
+| `casa_hoffman`    | Rimon Guimarães   | Casa Hoffman                       |
+| `indios`          | Wes Gama          | O povo brasileiro - Tingui         |
+
+As imagens estão em formato `.jpg`. O app também aceita `.png`.
+
+> **Sem imagens:** o app funciona normalmente, exibindo o ícone SF Symbol `photo` como placeholder em cada célula e na tela de detalhes.
 
 ---
 
-## Estrutura de arquivos
+## Estrutura de Arquivos
 
 ```
 GaleriaArtistas/
 ├── AppDelegate.swift
-├── SceneDelegate.swift
+├── SceneDelegate.swift          ← ponto de entrada; monta o UINavigationController
+├── ViewController.swift         ← arquivo do template (presente, mas não utilizado)
 ├── Models/
-│   └── ObraDeArte.swift          ← struct + acervo inicial
+│   └── ObraDeArte.swift         ← struct + static let acervo
 ├── Controllers/
-│   ├── GaleriaViewController.swift  ← grade + busca
-│   └── DetalhesViewController.swift ← detalhes + compartilhamento
+│   ├── GaleriaViewController.swift   ← grade + busca
+│   └── DetalhesViewController.swift  ← detalhes + compartilhamento
 └── Views/
-    └── ObraCelula.swift          ← célula customizada
+    └── ObraCelula.swift         ← célula customizada
 ```
 
 ---
@@ -76,9 +80,9 @@ GaleriaArtistas/
 ## Funcionalidades
 
 - **Grade responsiva:** 2 colunas (iPhone retrato) / 3 colunas (iPhone paisagem e iPad)
-- **Busca em tempo real** por título ou nome do artista
-- **Tela de detalhes** com imagem ampliada, fichas de Ano/Estilo, descrição e botão de compartilhamento
-- **Animações:** escala ao tocar na célula + fade/translação ao rolar a grade
+- **Busca em tempo real** por título ou nome do artista via `UISearchController`
+- **Tela de detalhes** com imagem ampliada, todas as informações da obra (título, artista, ano, estilo e descrição) e botão de compartilhamento
+- **Animação de toque:** escala suave ao pressionar uma célula via `isHighlighted`
 - **Compartilhamento:** texto com título, artista e convite via `UIActivityViewController`
 - **Dark Mode:** totalmente compatível via semantic colors
 
